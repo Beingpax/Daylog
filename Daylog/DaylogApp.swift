@@ -2,8 +2,6 @@
 //  DaylogApp.swift
 //  Daylog
 //
-//  Created by Prakash Joshi on 05/01/2026.
-//
 
 import SwiftUI
 import SwiftData
@@ -12,7 +10,9 @@ import SwiftData
 struct DaylogApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            CategoryGroup.self,
+            Category.self,
+            HourLog.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -25,7 +25,10 @@ struct DaylogApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
+                .onAppear {
+                    DefaultData.seedIfNeeded(context: sharedModelContainer.mainContext)
+                }
         }
         .modelContainer(sharedModelContainer)
     }
