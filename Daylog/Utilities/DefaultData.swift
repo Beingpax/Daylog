@@ -23,13 +23,16 @@ struct DefaultData {
         context.insert(productive)
 
         let productiveCategories = [
-            ("Deep Work", "brain.head.profile"),
-            ("Learning", "book.fill"),
+            ("VoiceInk", "chevron.left.forwardslash.chevron.right"),
+            ("Reading", "book.fill"),
             ("Exercise", "figure.run"),
-            ("Building", "hammer.fill"),
             ("Planning", "calendar"),
-            ("Admin", "folder.fill"),
-            ("Writing", "pencil.line")
+            ("Writing", "pencil.line"),
+            ("Research", "magnifyingglass"),
+            ("Content Creation", "video.fill"),
+            ("Communications", "envelope.fill"),
+            ("Marketing", "megaphone.fill"),
+            ("Learning", "graduationcap.fill")
         ]
 
         for (index, (name, icon)) in productiveCategories.enumerated() {
@@ -37,32 +40,46 @@ struct DefaultData {
             context.insert(category)
         }
 
-        // Non-Productive - Red
-        let nonProductive = CategoryGroup(name: "Non-Productive", colorHex: "#FF3B30", sortOrder: 1)
-        context.insert(nonProductive)
+        // Time Waste - Red
+        let timeWaste = CategoryGroup(name: "Time Waste", colorHex: "#FF3B30", sortOrder: 1)
+        context.insert(timeWaste)
 
-        let nonProductiveCategories = [
+        let timeWasteCategories = [
             ("Social Media", "iphone"),
             ("Entertainment", "tv.fill"),
-            ("Procrastination", "clock.fill"),
-            ("Distraction", "sparkles")
+            ("Procrastination", "clock.fill")
         ]
 
-        for (index, (name, icon)) in nonProductiveCategories.enumerated() {
-            let category = Category(name: name, icon: icon, sortOrder: index, group: nonProductive)
+        for (index, (name, icon)) in timeWasteCategories.enumerated() {
+            let category = Category(name: name, icon: icon, sortOrder: index, group: timeWaste)
+            context.insert(category)
+        }
+
+        // Rest - Purple
+        let rest = CategoryGroup(name: "Rest", colorHex: "#AF52DE", sortOrder: 2)
+        context.insert(rest)
+
+        let restCategories = [
+            ("Sleep", "moon.fill"),
+            ("Meals", "fork.knife"),
+            ("Meditation", "figure.mind.and.body"),
+            ("Walk", "figure.walk")
+        ]
+
+        for (index, (name, icon)) in restCategories.enumerated() {
+            let category = Category(name: name, icon: icon, sortOrder: index, group: rest)
             context.insert(category)
         }
 
         // Neutral - Gray
-        let neutral = CategoryGroup(name: "Neutral", colorHex: "#8E8E93", sortOrder: 2)
+        let neutral = CategoryGroup(name: "Neutral", colorHex: "#8E8E93", sortOrder: 3)
         context.insert(neutral)
 
         let neutralCategories = [
-            ("Sleep", "moon.fill"),
-            ("Meals", "fork.knife"),
-            ("Personal Care", "heart.fill"),
-            ("Rest", "cup.and.saucer.fill"),
-            ("Errands", "cart.fill")
+            ("Hygiene", "drop.fill"),
+            ("Chores", "sparkles"),
+            ("Errands", "cart.fill"),
+            ("Travel", "car.fill")
         ]
 
         for (index, (name, icon)) in neutralCategories.enumerated() {
@@ -71,14 +88,13 @@ struct DefaultData {
         }
 
         // Social - Blue
-        let social = CategoryGroup(name: "Social", colorHex: "#007AFF", sortOrder: 3)
+        let social = CategoryGroup(name: "Social", colorHex: "#007AFF", sortOrder: 4)
         context.insert(social)
 
         let socialCategories = [
-            ("Girlfriend", "heart.circle.fill"),
-            ("Friends", "person.2.fill"),
+            ("Relationship", "heart.circle.fill"),
             ("Family", "house.fill"),
-            ("Networking", "network")
+            ("Friends", "person.2.fill")
         ]
 
         for (index, (name, icon)) in socialCategories.enumerated() {
