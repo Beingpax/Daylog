@@ -12,19 +12,19 @@ final class HourLog {
     var date: Date
     var hour: Int
     var notes: String
-    var energyLevel: Int  // 1-10: 1 = lethargic, 10 = focused & driven
+    var productivityLevel: Int  // 1-10: 1 = idle, 10 = peak
     var createdAt: Date
     var updatedAt: Date
 
     var category: Category?
 
-    init(date: Date, hour: Int, category: Category? = nil, notes: String = "", energyLevel: Int = 5) {
+    init(date: Date, hour: Int, category: Category? = nil, notes: String = "", productivityLevel: Int = 5) {
         self.id = UUID()
         self.date = Calendar.current.startOfDay(for: date)
         self.hour = hour
         self.category = category
         self.notes = notes
-        self.energyLevel = energyLevel
+        self.productivityLevel = productivityLevel
         self.createdAt = Date()
         self.updatedAt = Date()
     }
@@ -40,18 +40,24 @@ final class HourLog {
         return "\(hour):00"
     }
 
-    var energyLabel: String {
-        switch energyLevel {
-        case 1...3: return "Low"
-        case 4...6: return "Medium"
-        case 7...9: return "High"
+    var productivityLabel: String {
+        switch productivityLevel {
+        case 1: return "Idle"
+        case 2: return "Stalled"
+        case 3: return "Slow"
+        case 4: return "Sluggish"
+        case 5: return "Steady"
+        case 6: return "Active"
+        case 7: return "Focused"
+        case 8: return "Driven"
+        case 9: return "Flowing"
         case 10: return "Peak"
         default: return ""
         }
     }
 
-    var energyColor: String {
-        switch energyLevel {
+    var productivityColor: String {
+        switch productivityLevel {
         case 1...3: return "#FF3B30"   // Red
         case 4...6: return "#FF9500"   // Orange
         case 7...9: return "#34C759"   // Green

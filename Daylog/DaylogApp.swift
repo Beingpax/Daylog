@@ -9,6 +9,12 @@ import SwiftData
 @main
 struct DaylogApp: App {
     var sharedModelContainer: ModelContainer = {
+        // Ensure Application Support directory exists to prevent CoreData errors on first launch
+        let fileManager = FileManager.default
+        if let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+            try? fileManager.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+        }
+
         let schema = Schema([
             CategoryGroup.self,
             Category.self,

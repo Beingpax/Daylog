@@ -40,14 +40,14 @@ struct WeeklyView: View {
         previousWeekLogs.filter { $0.category?.group?.name == "Productive" }.count
     }
 
-    private var avgEnergyLevel: Double {
+    private var avgProductivityLevel: Double {
         guard !logsForWeek.isEmpty else { return 0 }
-        return Double(logsForWeek.reduce(0) { $0 + $1.energyLevel }) / Double(logsForWeek.count)
+        return Double(logsForWeek.reduce(0) { $0 + $1.productivityLevel }) / Double(logsForWeek.count)
     }
 
-    private var previousAvgEnergy: Double {
+    private var previousAvgProductivity: Double {
         guard !previousWeekLogs.isEmpty else { return 0 }
-        return Double(previousWeekLogs.reduce(0) { $0 + $1.energyLevel }) / Double(previousWeekLogs.count)
+        return Double(previousWeekLogs.reduce(0) { $0 + $1.productivityLevel }) / Double(previousWeekLogs.count)
     }
 
     private var isCurrentWeek: Bool {
@@ -78,7 +78,7 @@ struct WeeklyView: View {
 
                     if !logsForWeek.isEmpty {
                         insightsSection
-                        energyByTimeOfDay
+                        productivityByTimeOfDay
                         timeDistribution
                     } else {
                         AnalyticsEmptyState(
@@ -112,20 +112,20 @@ struct WeeklyView: View {
         let hoursPerGroup = calculateHoursPerGroup()
         let prevHoursPerGroup = calculatePreviousWeekHoursPerGroup()
 
-        // Peak energy hour
-        if let peakHour = peakEnergyHour {
-            let hourlyEnergy = calculateHourlyEnergy()
-            if let peakData = hourlyEnergy.first(where: { $0.hour == peakHour }), peakData.avgEnergy >= 7 {
+        // Peak productivity hour
+        if let peakHour = peakProductivityHour {
+            let hourlyProductivity = calculateHourlyProductivity()
+            if let peakData = hourlyProductivity.first(where: { $0.hour == peakHour }), peakData.avgProductivity >= 7 {
                 insights.append(Insight(icon: "bolt.fill", color: .orange,
-                    text: "Peak energy at \(formattedHour(peakHour)) — ideal for deep work"))
+                    text: "Peak productivity at \(formattedHour(peakHour)) — ideal for deep work"))
             }
         }
 
-        // Low energy detection
-        let hourlyEnergy = calculateHourlyEnergy().filter { $0.avgEnergy > 0 }
-        if let lowHour = hourlyEnergy.min(by: { $0.avgEnergy < $1.avgEnergy }), lowHour.avgEnergy < 5 && lowHour.avgEnergy > 0 {
+        // Low productivity detection
+        let hourlyProductivity = calculateHourlyProductivity().filter { $0.avgProductivity > 0 }
+        if let lowHour = hourlyProductivity.min(by: { $0.avgProductivity < $1.avgProductivity }), lowHour.avgProductivity < 5 && lowHour.avgProductivity > 0 {
             insights.append(Insight(icon: "moon.fill", color: .indigo,
-                text: "Energy lowest at \(formattedHour(lowHour.hour)) — schedule lighter tasks"))
+                text: "Productivity lowest at \(formattedHour(lowHour.hour)) — schedule lighter tasks"))
         }
 
         // Productive time change
@@ -172,18 +172,18 @@ struct WeeklyView: View {
         return Array(insights.prefix(4))
     }
 
-    // MARK: - Energy Chart
+    // MARK: - Productivity Chart
 
-    private var energyByTimeOfDay: some View {
-        AnalyticsCard(title: "Energy Pattern", subtitle: peakEnergyHour.map { "Peak: \(formattedHour($0))" }) {
-            Chart(calculateHourlyEnergy(), id: \.hour) { item in
-                AreaMark(x: .value("Hour", item.hour), y: .value("Energy", item.avgEnergy))
+    private var productivityByTimeOfDay: some View {
+        AnalyticsCard(title: "Productivity Pattern", subtitle: peakProductivityHour.map { "Peak: \(formattedHour($0))" }) {
+            Chart(calculateHourlyProductivity(), id: \.hour) { item in
+                AreaMark(x: .value("Hour", item.hour), y: .value("Productivity", item.avgProductivity))
                     .foregroundStyle(LinearGradient(
                         colors: [Color.orange.opacity(0.3), Color.orange.opacity(0.05)],
                         startPoint: .top, endPoint: .bottom))
                     .interpolationMethod(.catmullRom)
 
-                LineMark(x: .value("Hour", item.hour), y: .value("Energy", item.avgEnergy))
+                LineMark(x: .value("Hour", item.hour), y: .value("Productivity", item.avgProductivity))
                     .foregroundStyle(Color.orange)
                     .lineStyle(StrokeStyle(lineWidth: 2))
                     .interpolationMethod(.catmullRom)
@@ -241,22 +241,22 @@ struct WeeklyView: View {
 
     // MARK: - Helper Methods
 
-    private func calculateHourlyEnergy() -> [(hour: Int, avgEnergy: Double)] {
+    private func calculateHourlyProductivity() -> [(hour: Int, avgProductivity: Double)] {
         var hourlySum: [Int: (total: Int, count: Int)] = [:]
         for log in logsForWeek {
             let existing = hourlySum[log.hour, default: (0, 0)]
-            hourlySum[log.hour] = (existing.total + log.energyLevel, existing.count + 1)
+            hourlySum[log.hour] = (existing.total + log.productivityLevel, existing.count + 1)
         }
         return (6...23).map { hour in
             if let data = hourlySum[hour], data.count > 0 {
-                return (hour: hour, avgEnergy: Double(data.total) / Double(data.count))
+                return (hour: hour, avgProductivity: Double(data.total) / Double(data.count))
             }
-            return (hour: hour, avgEnergy: 0)
+            return (hour: hour, avgProductivity: 0)
         }
     }
 
-    private var peakEnergyHour: Int? {
-        calculateHourlyEnergy().filter { $0.avgEnergy > 0 }.max(by: { $0.avgEnergy < $1.avgEnergy })?.hour
+    private var peakProductivityHour: Int? {
+        calculateHourlyProductivity().filter { $0.avgProductivity > 0 }.max(by: { $0.avgProductivity < $1.avgProductivity })?.hour
     }
 
     private func formattedHour(_ hour: Int) -> String {

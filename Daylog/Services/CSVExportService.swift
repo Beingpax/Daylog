@@ -11,17 +11,17 @@ struct CSVExportService {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
 
-        var csvContent = "date,hour,category_group,category,energy_level,notes\n"
+        var csvContent = "date,hour,category_group,category,productivity_level,notes\n"
 
         for log in logs.sorted(by: { ($0.date, $0.hour) < ($1.date, $1.hour) }) {
             let dateString = dateFormatter.string(from: log.date)
             let hour = log.hour
             let categoryGroup = log.category?.group?.name ?? ""
             let category = log.category?.name ?? ""
-            let energyLevel = log.energyLevel
+            let productivityLevel = log.productivityLevel
             let notes = escapeCSVField(log.notes)
 
-            csvContent += "\(dateString),\(hour),\(categoryGroup),\(category),\(energyLevel),\(notes)\n"
+            csvContent += "\(dateString),\(hour),\(categoryGroup),\(category),\(productivityLevel),\(notes)\n"
         }
 
         let fileName = "daylog_export_\(dateFormatter.string(from: Date())).csv"

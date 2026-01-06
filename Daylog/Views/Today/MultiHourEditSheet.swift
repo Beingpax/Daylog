@@ -18,7 +18,7 @@ struct MultiHourEditSheet: View {
     @Query(sort: \CategoryGroup.sortOrder) private var categoryGroups: [CategoryGroup]
 
     @State private var selectedCategory: Category?
-    @State private var energyLevel: Int = 5
+    @State private var productivityLevel: Int = 5
     @State private var notes: String = ""
 
     private var hoursLabel: String {
@@ -43,7 +43,7 @@ struct MultiHourEditSheet: View {
             List {
                 hoursSection
                 categorySection
-                energySection
+                productivitySection
                 notesSection
             }
             .navigationTitle("\(hours.count) Hours")
@@ -93,34 +93,34 @@ struct MultiHourEditSheet: View {
         }
     }
 
-    private var energySection: some View {
+    private var productivitySection: some View {
         Section {
             VStack(spacing: 12) {
                 HStack {
-                    Text("Energy Level")
+                    Text("Productivity")
                     Spacer()
-                    Text("\(energyLevel) — \(energyLabel)")
+                    Text("\(productivityLevel) — \(productivityLabel)")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Color(hex: "#34C759"))
                 }
 
-                EnergySlider(value: $energyLevel)
+                ProductivitySlider(value: $productivityLevel)
             }
         }
     }
 
-    private var energyLabel: String {
-        switch energyLevel {
-        case 1: return "Exhausted"
-        case 2: return "Very Low"
-        case 3: return "Low"
-        case 4: return "Below Average"
-        case 5: return "Average"
-        case 6: return "Above Average"
-        case 7: return "Good"
-        case 8: return "High"
-        case 9: return "Very High"
-        case 10: return "Peak Focus"
+    private var productivityLabel: String {
+        switch productivityLevel {
+        case 1: return "Idle"
+        case 2: return "Stalled"
+        case 3: return "Slow"
+        case 4: return "Sluggish"
+        case 5: return "Steady"
+        case 6: return "Active"
+        case 7: return "Focused"
+        case 8: return "Driven"
+        case 9: return "Flowing"
+        case 10: return "Peak"
         default: return ""
         }
     }
@@ -145,7 +145,7 @@ struct MultiHourEditSheet: View {
             if let existing = existingByHour[hour] {
                 // Update existing log
                 existing.category = category
-                existing.energyLevel = energyLevel
+                existing.productivityLevel = productivityLevel
                 existing.notes = notes
                 existing.updatedAt = Date()
             } else {
@@ -155,7 +155,7 @@ struct MultiHourEditSheet: View {
                     hour: hour,
                     category: category,
                     notes: notes,
-                    energyLevel: energyLevel
+                    productivityLevel: productivityLevel
                 )
                 modelContext.insert(newLog)
             }

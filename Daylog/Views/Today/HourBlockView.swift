@@ -90,7 +90,7 @@ struct HourBlockView: View {
                                     .opacity(0.7)
                             }
 
-                            Text("\(log.energyLevel)")
+                            Text("\(log.productivityLevel)")
                                 .font(.caption.weight(.semibold).monospacedDigit())
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
