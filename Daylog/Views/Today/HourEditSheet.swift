@@ -24,85 +24,68 @@ struct HourEditSheet: View {
     private var hourLabel: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "h a"
-        var startComponents = DateComponents()
-        startComponents.hour = hour
-        var endComponents = DateComponents()
-        endComponents.hour = (hour + 1) % 24
-
-        if let startDate = Calendar.current.date(from: startComponents),
-           let endDate = Calendar.current.date(from: endComponents) {
-            return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
+        var components = DateComponents()
+        components.hour = hour
+        if let d = Calendar.current.date(from: components) {
+            return formatter.string(from: d)
         }
-        return "\(hour):00 - \((hour + 1) % 24):00"
+        return "\(hour):00"
     }
 
     var body: some View {
         NavigationStack {
-            Form {
+            List {
+                // Time display
                 Section {
                     HStack {
-                        Image(systemName: "clock")
-                            .foregroundStyle(.secondary)
                         Text(hourLabel)
+                            .font(.title2.weight(.medium))
                         Spacer()
                         Text(date.formattedShortDate)
                             .foregroundStyle(.secondary)
                     }
                 }
 
+                // Category selection
                 Section("Category") {
                     ForEach(categoryGroups) { group in
-                        categoryGroupSection(group: group)
+                        categoryGroupRow(group: group)
                     }
                 }
 
+                // Mood selection
                 Section("Mood") {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 12) {
-                        ForEach(Mood.allCases) { mood in
-                            moodButton(mood: mood)
-                        }
-                    }
-                    .padding(.vertical, 4)
+                    moodGrid
                 }
 
+                // Notes
                 Section("Notes") {
-                    TextField("What did you do?", text: $notes, axis: .vertical)
-                        .lineLimit(2...4)
+                    TextField("What did you do?", text: $notes)
                 }
 
-                Section("Extra Details") {
-                    TextField("Additional context...", text: $extraDetails, axis: .vertical)
-                        .lineLimit(2...4)
-                }
-
+                // Delete button
                 if existingLog != nil {
                     Section {
                         Button(role: .destructive) {
                             deleteLog()
                         } label: {
-                            HStack {
-                                Spacer()
-                                Text("Delete Entry")
-                                Spacer()
-                            }
+                            Text("Delete")
+                                .frame(maxWidth: .infinity)
                         }
                     }
                 }
             }
-            .navigationTitle("Edit Hour")
+            .listStyle(.insetGrouped)
+            .navigationTitle("Edit")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
                 }
-
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveLog()
-                    }
-                    .disabled(selectedCategory == nil)
+                    Button("Save") { saveLog() }
+                        .fontWeight(.medium)
+                        .disabled(selectedCategory == nil)
                 }
             }
             .onAppear {
@@ -114,89 +97,87 @@ struct HourEditSheet: View {
                 }
             }
         }
-        .presentationDetents([.large])
+        .presentationDetents([.medium, .large])
     }
 
     @ViewBuilder
-    private func categoryGroupSection(group: CategoryGroup) -> some View {
-        let groupColor = Color(hex: group.colorHex)
-        let sortedCategories = group.categories.sorted { $0.sortOrder < $1.sortOrder }
+    private func categoryGroupRow(group: CategoryGroup) -> some View {
+        let color = Color(hex: group.colorHex)
 
         DisclosureGroup {
-            ForEach(sortedCategories) { category in
-                categoryRow(category: category, groupColor: groupColor)
-            }
-        } label: {
-            HStack {
-                Circle()
-                    .fill(groupColor)
-                    .frame(width: 12, height: 12)
-                Text(group.name)
-                    .fontWeight(.medium)
-            }
-        }
-    }
+            ForEach(group.categories.sorted { $0.sortOrder < $1.sortOrder }) { category in
+                Button {
+                    selectedCategory = category
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: category.icon)
+                            .font(.subheadline)
+                            .foregroundStyle(color)
+                            .frame(width: 20)
 
-    @ViewBuilder
-    private func categoryRow(category: Category, groupColor: Color) -> some View {
-        let isSelected = selectedCategory?.id == category.id
+                        Text(category.name)
+                            .foregroundStyle(.primary)
 
-        Button {
-            selectedCategory = category
-        } label: {
-            HStack {
-                Image(systemName: category.icon)
-                    .frame(width: 24)
-                    .foregroundStyle(groupColor)
+                        Spacer()
 
-                Text(category.name)
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark")
-                       
+                        if selectedCategory?.id == category.id {
+                            Image(systemName: "checkmark")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.accentColor)
+                        }
+                    }
                 }
             }
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 10, height: 10)
+                Text(group.name)
+                    .font(.subheadline.weight(.medium))
+            }
         }
     }
 
-    @ViewBuilder
-    private func moodButton(mood: Mood) -> some View {
-        let isSelected = selectedMood == mood
-        let moodColor = Color(hex: mood.color)
+    private var moodGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 70))], spacing: 8) {
+            ForEach(Mood.allCases) { mood in
+                let isSelected = selectedMood == mood
+                let moodColor = Color(hex: mood.color)
 
-        Button {
-            selectedMood = mood
-        } label: {
-            VStack(spacing: 6) {
-                Image(systemName: mood.icon)
-                    .font(.title2)
-                Text(mood.displayName)
-                    .font(.caption)
+                Button {
+                    selectedMood = mood
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: mood.icon)
+                            .font(.title3)
+                        Text(mood.displayName)
+                            .font(.caption2)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isSelected ? moodColor.opacity(0.15) : Color(.tertiarySystemFill))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(isSelected ? moodColor : Color.clear, lineWidth: 1.5)
+                    )
+                }
+                .foregroundStyle(isSelected ? moodColor : Color.secondary)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(isSelected ? moodColor.opacity(0.2) : Color(.systemGray6))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(isSelected ? moodColor : Color.clear, lineWidth: 2)
-            )
         }
-        .foregroundStyle(isSelected ? moodColor : Color.secondary)
+        .padding(.vertical, 4)
     }
 
     private func saveLog() {
-        if let existingLog = existingLog {
-            existingLog.category = selectedCategory
-            existingLog.notes = notes
-            existingLog.mood = selectedMood
-            existingLog.extraDetails = extraDetails
-            existingLog.updatedAt = Date()
+        if let log = existingLog {
+            log.category = selectedCategory
+            log.notes = notes
+            log.mood = selectedMood
+            log.extraDetails = extraDetails
+            log.updatedAt = Date()
         } else {
             let newLog = HourLog(
                 date: date,
@@ -208,7 +189,6 @@ struct HourEditSheet: View {
             )
             modelContext.insert(newLog)
         }
-
         try? modelContext.save()
         dismiss()
     }

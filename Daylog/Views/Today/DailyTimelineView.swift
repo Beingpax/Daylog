@@ -13,9 +13,15 @@ struct DailyTimelineView: View {
     @Query private var allLogs: [HourLog]
 
     private var logsForDate: [Int: HourLog] {
-        let dayStart = selectedDate.startOfDay
-        let filtered = allLogs.filter { $0.date.isSameDay(as: dayStart) }
-        return Dictionary(uniqueKeysWithValues: filtered.map { ($0.hour, $0) })
+        let targetDate = selectedDate.startOfDay
+        let filtered = allLogs.filter { log in
+            log.date.isSameDay(as: targetDate)
+        }
+        var dict: [Int: HourLog] = [:]
+        for log in filtered {
+            dict[log.hour] = log
+        }
+        return dict
     }
 
     private var currentHour: Int {
@@ -25,7 +31,7 @@ struct DailyTimelineView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 1) {
+                LazyVStack(spacing: 0) {
                     ForEach(0..<24, id: \.self) { hour in
                         HourBlockView(
                             hour: hour,
@@ -36,28 +42,35 @@ struct DailyTimelineView: View {
                         .onTapGesture {
                             onHourTap(hour, logsForDate[hour])
                         }
+
+                        if hour < 23 {
+                            Divider()
+                                .padding(.leading, 56)
+                        }
                     }
                 }
-                .padding(.horizontal)
                 .padding(.vertical, 8)
             }
+            .background(Color(.secondarySystemGroupedBackground))
             .onAppear {
-                if selectedDate.isSameDay(as: Date()) {
-                    withAnimation {
-                        proxy.scrollTo(max(0, currentHour - 2), anchor: .top)
-                    }
-                }
+                scrollToRelevantHour(proxy: proxy)
             }
-            .onChange(of: selectedDate) { _, newDate in
-                if newDate.isSameDay(as: Date()) {
-                    withAnimation {
-                        proxy.scrollTo(max(0, currentHour - 2), anchor: .top)
-                    }
-                } else {
-                    withAnimation {
-                        proxy.scrollTo(6, anchor: .top)
-                    }
-                }
+            .onChange(of: selectedDate) { _, _ in
+                scrollToRelevantHour(proxy: proxy)
+            }
+        }
+    }
+
+    private func scrollToRelevantHour(proxy: ScrollViewProxy) {
+        if selectedDate.isSameDay(as: Date()) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                proxy.scrollTo(max(0, currentHour - 2), anchor: .top)
+            }
+        } else {
+            // Scroll to first logged hour or 6am
+            let firstLoggedHour = logsForDate.keys.min() ?? 6
+            withAnimation(.easeOut(duration: 0.3)) {
+                proxy.scrollTo(max(0, firstLoggedHour - 1), anchor: .top)
             }
         }
     }

@@ -67,7 +67,12 @@ extension Date {
     }
 
     func isSameDay(as date: Date) -> Bool {
-        Calendar.current.isDate(self, inSameDayAs: date)
+        let calendar = Calendar.current
+        let selfComponents = calendar.dateComponents([.year, .month, .day], from: self)
+        let dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
+        return selfComponents.year == dateComponents.year &&
+               selfComponents.month == dateComponents.month &&
+               selfComponents.day == dateComponents.day
     }
 
     func isSameWeek(as date: Date) -> Bool {
