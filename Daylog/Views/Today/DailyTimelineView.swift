@@ -8,6 +8,8 @@ import SwiftData
 
 struct DailyTimelineView: View {
     let selectedDate: Date
+    let isSelectMode: Bool
+    @Binding var selectedHours: Set<Int>
     let onHourTap: (Int, HourLog?) -> Void
 
     @Query private var allLogs: [HourLog]
@@ -37,7 +39,21 @@ struct DailyTimelineView: View {
                             hour: hour,
                             log: logsForDate[hour],
                             isCurrentHour: selectedDate.isSameDay(as: Date()) && hour == currentHour,
-                            onTap: { onHourTap(hour, logsForDate[hour]) }
+                            isSelectMode: isSelectMode,
+                            isSelected: selectedHours.contains(hour),
+                            onTap: {
+                                if isSelectMode {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        if selectedHours.contains(hour) {
+                                            selectedHours.remove(hour)
+                                        } else {
+                                            selectedHours.insert(hour)
+                                        }
+                                    }
+                                } else {
+                                    onHourTap(hour, logsForDate[hour])
+                                }
+                            }
                         )
                         .id(hour)
                     }
@@ -72,6 +88,10 @@ struct DailyTimelineView: View {
 }
 
 #Preview {
-    DailyTimelineView(selectedDate: Date()) { _, _ in }
+    DailyTimelineView(
+        selectedDate: Date(),
+        isSelectMode: false,
+        selectedHours: .constant([])
+    ) { _, _ in }
         .modelContainer(for: [CategoryGroup.self, Category.self, HourLog.self], inMemory: true)
 }

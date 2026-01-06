@@ -9,6 +9,8 @@ struct HourBlockView: View {
     let hour: Int
     let log: HourLog?
     let isCurrentHour: Bool
+    var isSelectMode: Bool = false
+    var isSelected: Bool = false
     let onTap: () -> Void
 
     private var timeLabel: String {
@@ -36,6 +38,26 @@ struct HourBlockView: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 0) {
+                // Selection circle (in select mode)
+                if isSelectMode {
+                    ZStack {
+                        Circle()
+                            .stroke(isSelected ? Color.accentColor : Color(.tertiaryLabel), lineWidth: 2)
+                            .frame(width: 22, height: 22)
+
+                        if isSelected {
+                            Circle()
+                                .fill(Color.accentColor)
+                                .frame(width: 22, height: 22)
+
+                            Image(systemName: "checkmark")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding(.trailing, 8)
+                }
+
                 // Time label - outside the block
                 Text(timeLabel)
                     .font(.caption2.monospacedDigit())
