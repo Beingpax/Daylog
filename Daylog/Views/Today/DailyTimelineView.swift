@@ -31,27 +31,21 @@ struct DailyTimelineView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 0) {
+                VStack(spacing: 4) {
                     ForEach(0..<24, id: \.self) { hour in
                         HourBlockView(
                             hour: hour,
                             log: logsForDate[hour],
-                            isCurrentHour: selectedDate.isSameDay(as: Date()) && hour == currentHour
+                            isCurrentHour: selectedDate.isSameDay(as: Date()) && hour == currentHour,
+                            onTap: { onHourTap(hour, logsForDate[hour]) }
                         )
                         .id(hour)
-                        .onTapGesture {
-                            onHourTap(hour, logsForDate[hour])
-                        }
-
-                        if hour < 23 {
-                            Divider()
-                                .padding(.leading, 56)
-                        }
                     }
                 }
-                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(.systemGroupedBackground))
             .onAppear {
                 scrollToRelevantHour(proxy: proxy)
             }
@@ -62,15 +56,16 @@ struct DailyTimelineView: View {
     }
 
     private func scrollToRelevantHour(proxy: ScrollViewProxy) {
-        if selectedDate.isSameDay(as: Date()) {
-            withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo(max(0, currentHour - 2), anchor: .top)
-            }
-        } else {
-            // Scroll to first logged hour or 6am
-            let firstLoggedHour = logsForDate.keys.min() ?? 6
-            withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo(max(0, firstLoggedHour - 1), anchor: .top)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if selectedDate.isSameDay(as: Date()) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    proxy.scrollTo(max(0, currentHour - 2), anchor: .top)
+                }
+            } else {
+                let firstLoggedHour = logsForDate.keys.min() ?? 6
+                withAnimation(.easeOut(duration: 0.3)) {
+                    proxy.scrollTo(max(0, firstLoggedHour - 1), anchor: .top)
+                }
             }
         }
     }

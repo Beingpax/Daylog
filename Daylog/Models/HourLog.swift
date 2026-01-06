@@ -12,26 +12,19 @@ final class HourLog {
     var date: Date
     var hour: Int
     var notes: String
-    var moodRaw: String
-    var extraDetails: String
+    var energyLevel: Int  // 1-10: 1 = lethargic, 10 = focused & driven
     var createdAt: Date
     var updatedAt: Date
 
     var category: Category?
 
-    var mood: Mood? {
-        get { Mood(rawValue: moodRaw) }
-        set { moodRaw = newValue?.rawValue ?? "" }
-    }
-
-    init(date: Date, hour: Int, category: Category? = nil, notes: String = "", mood: Mood? = nil, extraDetails: String = "") {
+    init(date: Date, hour: Int, category: Category? = nil, notes: String = "", energyLevel: Int = 5) {
         self.id = UUID()
         self.date = Calendar.current.startOfDay(for: date)
         self.hour = hour
         self.category = category
         self.notes = notes
-        self.moodRaw = mood?.rawValue ?? ""
-        self.extraDetails = extraDetails
+        self.energyLevel = energyLevel
         self.createdAt = Date()
         self.updatedAt = Date()
     }
@@ -47,22 +40,23 @@ final class HourLog {
         return "\(hour):00"
     }
 
-    var hourRange: String {
-        let startHour = hour
-        let endHour = (hour + 1) % 24
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h a"
-
-        var startComponents = DateComponents()
-        startComponents.hour = startHour
-        var endComponents = DateComponents()
-        endComponents.hour = endHour
-
-        if let startDate = Calendar.current.date(from: startComponents),
-           let endDate = Calendar.current.date(from: endComponents) {
-            return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
+    var energyLabel: String {
+        switch energyLevel {
+        case 1...3: return "Low"
+        case 4...6: return "Medium"
+        case 7...9: return "High"
+        case 10: return "Peak"
+        default: return ""
         }
-        return "\(startHour):00 - \(endHour):00"
+    }
+
+    var energyColor: String {
+        switch energyLevel {
+        case 1...3: return "#FF3B30"   // Red
+        case 4...6: return "#FF9500"   // Orange
+        case 7...9: return "#34C759"   // Green
+        case 10: return "#007AFF"      // Blue
+        default: return "#8E8E93"
+        }
     }
 }

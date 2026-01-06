@@ -7,10 +7,9 @@ import SwiftUI
 import SwiftData
 
 struct TodayView: View {
-    @Environment(\.modelContext) private var modelContext
     @State private var selectedDate = Date()
-    @State private var selectedHourLog: HourLog?
-    @State private var selectedHour: Int?
+    @State private var editingHour: Int?
+    @State private var editingLog: HourLog?
 
     @Query private var allLogs: [HourLog]
 
@@ -27,103 +26,113 @@ struct TodayView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Date nav + stats
-                VStack(spacing: 12) {
-                    dateNavigator
-                    statsRow
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 12)
-                .background(Color(.secondarySystemGroupedBackground))
+                // Header
+                headerSection
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
 
                 // Timeline
-                DailyTimelineView(
-                    selectedDate: selectedDate,
-                    onHourTap: { hour, log in
-                        selectedHour = hour
-                        selectedHourLog = log
-                    }
-                )
+                DailyTimelineView(selectedDate: selectedDate) { hour, log in
+                    editingHour = hour
+                    editingLog = log
+                }
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("DayLog")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Today") { selectedDate = Date() }
-                        .font(.subheadline)
-                        .opacity(selectedDate.isSameDay(as: Date()) ? 0.3 : 1)
-                        .disabled(selectedDate.isSameDay(as: Date()))
+                    Button {
+                        withAnimation { selectedDate = Date() }
+                    } label: {
+                        Text("Today")
+                            .font(.subheadline)
+                    }
+                    .opacity(selectedDate.isSameDay(as: Date()) ? 0.3 : 1)
+                    .disabled(selectedDate.isSameDay(as: Date()))
                 }
             }
-            .sheet(item: $selectedHour) { hour in
-                HourEditSheet(date: selectedDate, hour: hour, existingLog: selectedHourLog)
+            .sheet(item: $editingHour) { hour in
+                HourEditSheet(date: selectedDate, hour: hour, existingLog: editingLog)
             }
         }
     }
 
-    private var dateNavigator: some View {
-        HStack {
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    selectedDate = selectedDate.adding(days: -1)
+    private var headerSection: some View {
+        VStack(spacing: 16) {
+            // Date navigation
+            HStack {
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        selectedDate = selectedDate.adding(days: -1)
+                    }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 36, height: 36)
+                        .background(Color(.tertiarySystemFill), in: Circle())
                 }
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.subheadline.weight(.medium))
+
+                Spacer()
+
+                VStack(spacing: 2) {
+                    Text(selectedDate.isSameDay(as: Date()) ? "Today" : selectedDate.shortDayOfWeek)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(selectedDate.formattedShortDate)
+                        .font(.title3.weight(.semibold))
+                }
+
+                Spacer()
+
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        selectedDate = selectedDate.adding(days: 1)
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(selectedDate.isSameDay(as: Date()) ? .tertiary : .secondary)
+                        .frame(width: 36, height: 36)
+                        .background(Color(.tertiarySystemFill), in: Circle())
+                }
+                .disabled(selectedDate.isSameDay(as: Date()))
+            }
+
+            // Stats
+            HStack(spacing: 12) {
+                StatCard(value: loggedCount, total: 24, label: "Logged", color: .accentColor)
+                StatCard(value: productiveCount, total: loggedCount, label: "Productive", color: .green)
+            }
+        }
+    }
+}
+
+struct StatCard: View {
+    let value: Int
+    let total: Int
+    let label: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("\(value)")
+                    .font(.title2.weight(.bold).monospacedDigit())
+                    .foregroundStyle(color)
+                Text("/\(total)")
+                    .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .frame(width: 32, height: 32)
             }
-
-            Spacer()
-
-            VStack(spacing: 1) {
-                Text(selectedDate.isSameDay(as: Date()) ? "Today" : selectedDate.shortDayOfWeek)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(selectedDate.formattedShortDate)
-                    .font(.subheadline.weight(.medium))
-            }
-
-            Spacer()
-
-            Button {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    selectedDate = selectedDate.adding(days: 1)
-                }
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(selectedDate.isSameDay(as: Date()) ? .tertiary : .secondary)
-                    .frame(width: 32, height: 32)
-            }
-            .disabled(selectedDate.isSameDay(as: Date()))
-        }
-    }
-
-    private var statsRow: some View {
-        HStack(spacing: 0) {
-            statItem(value: loggedCount, label: "Logged", color: Color.accentColor)
-            Divider().frame(height: 24)
-            statItem(value: productiveCount, label: "Productive", color: Color.green)
-            Divider().frame(height: 24)
-            statItem(value: max(0, 24 - loggedCount), label: "Remaining", color: Color.secondary)
-        }
-        .padding(.vertical, 8)
-        .background(Color(.tertiarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-
-    private func statItem(value: Int, label: String, color: Color) -> some View {
-        VStack(spacing: 2) {
-            Text("\(value)")
-                .font(.headline.monospacedDigit())
-                .foregroundStyle(color)
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12))
     }
 }
 

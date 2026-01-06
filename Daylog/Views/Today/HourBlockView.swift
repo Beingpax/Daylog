@@ -9,91 +9,97 @@ struct HourBlockView: View {
     let hour: Int
     let log: HourLog?
     let isCurrentHour: Bool
+    let onTap: () -> Void
 
     private var timeLabel: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "ha"
+        formatter.dateFormat = "h a"
         var components = DateComponents()
         components.hour = hour
         if let date = Calendar.current.date(from: components) {
-            return formatter.string(from: date).lowercased()
+            return formatter.string(from: date)
         }
-        return "\(hour)"
+        return "\(hour):00"
     }
 
-    private var categoryColor: Color {
-        if let colorHex = log?.category?.group?.colorHex {
-            return Color(hex: colorHex)
+    private var blockColor: Color {
+        if let hex = log?.category?.group?.colorHex {
+            return Color(hex: hex)
         }
-        return Color(.systemGray4)
+        return Color(.systemGray5)
+    }
+
+    private var isLogged: Bool {
+        log?.category != nil
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Time
-            Text(timeLabel)
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(isCurrentHour ? Color.accentColor : Color.secondary)
-                .frame(width: 36, alignment: .trailing)
+        Button(action: onTap) {
+            HStack(spacing: 0) {
+                // Time label - outside the block
+                Text(timeLabel)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, alignment: .trailing)
+                    .padding(.trailing, 8)
 
-            // Color bar
-            RoundedRectangle(cornerRadius: 2)
-                .fill(categoryColor)
-                .frame(width: 3, height: 36)
+                // Visual block
+                ZStack(alignment: .leading) {
+                    // Background
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(blockColor.opacity(isLogged ? 1 : 0.4))
+                        .frame(height: 44)
 
-            // Content
-            if let log = log, let category = log.category {
-                HStack(spacing: 6) {
-                    Image(systemName: category.icon)
-                        .font(.caption)
-                        .foregroundStyle(categoryColor)
-                        .frame(width: 16)
+                    // Content
+                    if let log = log, let category = log.category {
+                        HStack(spacing: 8) {
+                            Image(systemName: category.icon)
+                                .font(.subheadline)
 
-                    Text(category.name)
-                        .font(.subheadline)
-                        .lineLimit(1)
+                            Text(category.name)
+                                .font(.subheadline.weight(.medium))
+                                .lineLimit(1)
 
-                    if !log.notes.isEmpty {
-                        Text("·")
-                            .foregroundStyle(.tertiary)
-                        Text(log.notes)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
+                            Spacer(minLength: 0)
+
+                            if !log.notes.isEmpty {
+                                Image(systemName: "doc.text")
+                                    .font(.caption2)
+                                    .opacity(0.7)
+                            }
+
+                            Text("\(log.energyLevel)")
+                                .font(.caption.weight(.semibold).monospacedDigit())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.white.opacity(0.25), in: Capsule())
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
                     }
 
-                    Spacer(minLength: 0)
-
-                    if let mood = log.mood {
-                        Image(systemName: mood.icon)
-                            .font(.caption2)
-                            .foregroundStyle(Color(hex: mood.color))
+                    // Current hour indicator
+                    if isCurrentHour {
+                        HStack {
+                            Capsule()
+                                .fill(Color.accentColor)
+                                .frame(width: 3, height: 28)
+                            Spacer()
+                        }
                     }
                 }
-            } else {
-                Text("—")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
-                Spacer()
             }
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background {
-            if isCurrentHour {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.accentColor.opacity(0.08))
-            }
-        }
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
     }
 }
 
 #Preview {
-    VStack(spacing: 2) {
-        HourBlockView(hour: 9, log: nil, isCurrentHour: false)
-        HourBlockView(hour: 10, log: nil, isCurrentHour: true)
-        HourBlockView(hour: 11, log: nil, isCurrentHour: false)
+    VStack(spacing: 4) {
+        HourBlockView(hour: 9, log: nil, isCurrentHour: false, onTap: {})
+        HourBlockView(hour: 10, log: nil, isCurrentHour: true, onTap: {})
+        HourBlockView(hour: 11, log: nil, isCurrentHour: false, onTap: {})
     }
     .padding()
+    .background(Color(.systemGroupedBackground))
 }
