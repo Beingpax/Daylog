@@ -28,7 +28,7 @@ struct CategoriesView: View {
                             Text(category.name)
                                 .foregroundStyle(.primary)
 
-                            Text("\(category.projects.count) projects")
+                            Text("\((category.projects ?? []).count) projects")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

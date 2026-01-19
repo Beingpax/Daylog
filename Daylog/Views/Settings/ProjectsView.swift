@@ -17,7 +17,7 @@ struct ProjectsView: View {
         List {
             ForEach(categories) { category in
                 Section {
-                    ForEach(category.projects.sorted { $0.sortOrder < $1.sortOrder }) { project in
+                    ForEach((category.projects ?? []).sorted { $0.sortOrder < $1.sortOrder }) { project in
                         Button {
                             editingProject = project
                         } label: {
@@ -70,7 +70,7 @@ struct ProjectsView: View {
     }
 
     private func deleteProjects(category: Category, at offsets: IndexSet) {
-        let sortedProjects = category.projects.sorted { $0.sortOrder < $1.sortOrder }
+        let sortedProjects = (category.projects ?? []).sorted { $0.sortOrder < $1.sortOrder }
         for index in offsets {
             modelContext.delete(sortedProjects[index])
         }

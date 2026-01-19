@@ -8,12 +8,15 @@ import SwiftData
 
 @Model
 final class Project {
-    var id: UUID
-    var name: String
-    var icon: String
-    var sortOrder: Int
+    var id: UUID = UUID()
+    var name: String = ""
+    var icon: String = "circle.fill"
+    var sortOrder: Int = 0
 
     var category: Category?
+
+    @Relationship(deleteRule: .nullify, inverse: \HourLog.project)
+    var hourLogs: [HourLog]? = []
 
     init(name: String, icon: String = "circle.fill", sortOrder: Int = 0, category: Category? = nil) {
         self.id = UUID()

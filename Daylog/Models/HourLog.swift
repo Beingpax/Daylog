@@ -8,12 +8,12 @@ import SwiftData
 
 @Model
 final class HourLog {
-    var id: UUID
-    var date: Date
-    var hour: Int
-    var notes: String
-    var createdAt: Date
-    var updatedAt: Date
+    var id: UUID = UUID()
+    var date: Date = Date()
+    var hour: Int = 0
+    var notes: String = ""
+    var createdAt: Date = Date()
+    var updatedAt: Date = Date()
 
     var project: Project?
 

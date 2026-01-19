@@ -67,7 +67,7 @@ struct HourEditSheet: View {
             Picker("Project", selection: $selectedProject) {
                 Text("None").tag(nil as Project?)
                 ForEach(categories) { category in
-                    ForEach(category.projects.sorted { $0.sortOrder < $1.sortOrder }) { project in
+                    ForEach((category.projects ?? []).sorted { $0.sortOrder < $1.sortOrder }) { project in
                         Text(project.name).tag(project as Project?)
                     }
                 }
