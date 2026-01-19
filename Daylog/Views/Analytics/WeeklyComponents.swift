@@ -46,7 +46,7 @@ struct SummaryCard: View {
 struct DailyBarRow: View {
     let date: Date
     let logs: [HourLog]
-    let categoryGroups: [CategoryGroup]
+    let categories: [Category]
     let isToday: Bool
 
     private var dayLabel: String {
@@ -61,16 +61,16 @@ struct DailyBarRow: View {
         return formatter.string(from: date)
     }
 
-    private var groupDistribution: [(group: CategoryGroup, count: Int)] {
+    private var categoryDistribution: [(category: Category, count: Int)] {
         var counts: [UUID: Int] = [:]
         for log in logs {
-            if let groupId = log.category?.group?.id {
-                counts[groupId, default: 0] += 1
+            if let categoryId = log.project?.category?.id {
+                counts[categoryId, default: 0] += 1
             }
         }
-        return categoryGroups.compactMap { group in
-            if let count = counts[group.id], count > 0 {
-                return (group: group, count: count)
+        return categories.compactMap { category in
+            if let count = counts[category.id], count > 0 {
+                return (category: category, count: count)
             }
             return nil
         }.sorted { $0.count > $1.count }
@@ -95,9 +95,9 @@ struct DailyBarRow: View {
             } else {
                 GeometryReader { geo in
                     HStack(spacing: 1) {
-                        ForEach(groupDistribution, id: \.group.id) { item in
+                        ForEach(categoryDistribution, id: \.category.id) { item in
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color(hex: item.group.colorHex))
+                                .fill(Color(hex: item.category.colorHex))
                                 .frame(width: max(4, geo.size.width * CGFloat(item.count) / 24))
                         }
                         Spacer(minLength: 0)

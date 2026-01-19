@@ -9,17 +9,17 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Categories") {
-                    NavigationLink {
-                        CategoryGroupsView()
-                    } label: {
-                        Label("Category Groups", systemImage: "folder.fill")
-                    }
-
+                Section("Organization") {
                     NavigationLink {
                         CategoriesView()
                     } label: {
-                        Label("Categories", systemImage: "tag.fill")
+                        Label("Categories", systemImage: "folder.fill")
+                    }
+
+                    NavigationLink {
+                        ProjectsView()
+                    } label: {
+                        Label("Projects", systemImage: "tag.fill")
                     }
                 }
 

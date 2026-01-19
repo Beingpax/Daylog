@@ -8,47 +8,41 @@ import SwiftData
 
 struct CategoriesView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \CategoryGroup.sortOrder) private var groups: [CategoryGroup]
+    @Query(sort: \Category.sortOrder) private var categories: [Category]
 
     @State private var showingAddSheet = false
     @State private var editingCategory: Category?
 
     var body: some View {
         List {
-            ForEach(groups) { group in
-                Section {
-                    ForEach(group.categories.sorted { $0.sortOrder < $1.sortOrder }) { category in
-                        Button {
-                            editingCategory = category
-                        } label: {
-                            HStack {
-                                Image(systemName: category.icon)
-                                    .frame(width: 28)
-                                    .foregroundStyle(Color(hex: group.colorHex))
-
-                                Text(category.name)
-                                    .foregroundStyle(.primary)
-
-                                Spacer()
-
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                    }
-                    .onDelete { offsets in
-                        deleteCategories(group: group, at: offsets)
-                    }
-                } header: {
+            ForEach(categories) { category in
+                Button {
+                    editingCategory = category
+                } label: {
                     HStack {
                         Circle()
-                            .fill(Color(hex: group.colorHex))
-                            .frame(width: 10, height: 10)
-                        Text(group.name)
+                            .fill(Color(hex: category.colorHex))
+                            .frame(width: 24, height: 24)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(category.name)
+                                .foregroundStyle(.primary)
+
+                            Text("\(category.projects.count) projects")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
                 }
             }
+            .onDelete(perform: deleteCategories)
+            .onMove(perform: moveCategories)
         }
         .navigationTitle("Categories")
         .navigationBarTitleDisplayMode(.inline)
@@ -60,6 +54,10 @@ struct CategoriesView: View {
                     Image(systemName: "plus")
                 }
             }
+
+            ToolbarItem(placement: .topBarLeading) {
+                EditButton()
+            }
         }
         .sheet(isPresented: $showingAddSheet) {
             CategoryEditSheet(category: nil)
@@ -69,10 +67,18 @@ struct CategoriesView: View {
         }
     }
 
-    private func deleteCategories(group: CategoryGroup, at offsets: IndexSet) {
-        let sortedCategories = group.categories.sorted { $0.sortOrder < $1.sortOrder }
+    private func deleteCategories(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(sortedCategories[index])
+            modelContext.delete(categories[index])
+        }
+        try? modelContext.save()
+    }
+
+    private func moveCategories(from source: IndexSet, to destination: Int) {
+        var reorderedCategories = categories
+        reorderedCategories.move(fromOffsets: source, toOffset: destination)
+        for (index, category) in reorderedCategories.enumerated() {
+            category.sortOrder = index
         }
         try? modelContext.save()
     }
@@ -82,22 +88,22 @@ struct CategoryEditSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    @Query(sort: \CategoryGroup.sortOrder) private var groups: [CategoryGroup]
-
     let category: Category?
 
     @State private var name: String = ""
-    @State private var icon: String = "circle.fill"
-    @State private var selectedGroup: CategoryGroup?
+    @State private var selectedColor: String = "#34C759"
 
-    private let iconOptions = [
-        "circle.fill", "brain.head.profile", "book.fill", "figure.run",
-        "hammer.fill", "calendar", "folder.fill", "pencil.line",
-        "iphone", "tv.fill", "clock.fill", "sparkles",
-        "moon.fill", "fork.knife", "heart.fill", "cup.and.saucer.fill",
-        "cart.fill", "heart.circle.fill", "person.2.fill", "house.fill",
-        "network", "laptopcomputer", "gamecontroller.fill", "music.note",
-        "phone.fill", "envelope.fill", "car.fill", "airplane"
+    private let colorOptions = [
+        "#34C759", // Green
+        "#FF3B30", // Red
+        "#007AFF", // Blue
+        "#FF9500", // Orange
+        "#AF52DE", // Purple
+        "#5856D6", // Indigo
+        "#00C7BE", // Teal
+        "#FF2D55", // Pink
+        "#8E8E93", // Gray
+        "#FFCC00"  // Yellow
     ]
 
     var body: some View {
@@ -107,25 +113,25 @@ struct CategoryEditSheet: View {
                     TextField("Category Name", text: $name)
                 }
 
-                Section("Group") {
-                    Picker("Group", selection: $selectedGroup) {
-                        Text("None").tag(nil as CategoryGroup?)
-                        ForEach(groups) { group in
-                            HStack {
-                                Circle()
-                                    .fill(Color(hex: group.colorHex))
-                                    .frame(width: 12, height: 12)
-                                Text(group.name)
-                            }
-                            .tag(group as CategoryGroup?)
-                        }
-                    }
-                }
-
-                Section("Icon") {
+                Section("Color") {
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 50))], spacing: 12) {
-                        ForEach(iconOptions, id: \.self) { iconName in
-                            iconButton(for: iconName)
+                        ForEach(colorOptions, id: \.self) { color in
+                            Button {
+                                selectedColor = color
+                            } label: {
+                                Circle()
+                                    .fill(Color(hex: color))
+                                    .frame(width: 44, height: 44)
+                                    .overlay {
+                                        if selectedColor == color {
+                                            Circle()
+                                                .strokeBorder(.white, lineWidth: 3)
+                                            Image(systemName: "checkmark")
+                                                .foregroundStyle(.white)
+                                                .font(.caption.weight(.bold))
+                                        }
+                                    }
+                            }
                         }
                     }
                     .padding(.vertical, 8)
@@ -144,53 +150,27 @@ struct CategoryEditSheet: View {
                     Button("Save") {
                         save()
                     }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || selectedGroup == nil)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .onAppear {
                 if let category = category {
                     name = category.name
-                    icon = category.icon
-                    selectedGroup = category.group
-                } else if selectedGroup == nil {
-                    selectedGroup = groups.first
+                    selectedColor = category.colorHex
                 }
             }
         }
     }
 
-    @ViewBuilder
-    private func iconButton(for iconName: String) -> some View {
-        let isSelected = icon == iconName
-        Button {
-            icon = iconName
-        } label: {
-            Image(systemName: iconName)
-                .font(.title3)
-                .frame(width: 44, height: 44)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isSelected ? Color.accentColor.opacity(0.2) : Color(.systemGray6))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-                )
-        }
-        .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-    }
-
     private func save() {
         if let category = category {
             category.name = name.trimmingCharacters(in: .whitespaces)
-            category.icon = icon
-            category.group = selectedGroup
+            category.colorHex = selectedColor
         } else {
             let newCategory = Category(
                 name: name.trimmingCharacters(in: .whitespaces),
-                icon: icon,
-                sortOrder: 999,
-                group: selectedGroup
+                colorHex: selectedColor,
+                sortOrder: 999
             )
             modelContext.insert(newCategory)
         }
@@ -203,5 +183,5 @@ struct CategoryEditSheet: View {
     NavigationStack {
         CategoriesView()
     }
-    .modelContainer(for: [CategoryGroup.self, Category.self, HourLog.self], inMemory: true)
+    .modelContainer(for: [Category.self, Project.self, HourLog.self], inMemory: true)
 }

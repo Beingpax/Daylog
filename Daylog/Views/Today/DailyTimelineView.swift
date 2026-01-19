@@ -93,5 +93,5 @@ struct DailyTimelineView: View {
         isSelectMode: false,
         selectedHours: .constant([])
     ) { _, _ in }
-        .modelContainer(for: [CategoryGroup.self, Category.self, HourLog.self], inMemory: true)
+        .modelContainer(for: [Category.self, Project.self, HourLog.self], inMemory: true)
 }

@@ -10,16 +10,16 @@ import SwiftData
 final class Category {
     var id: UUID
     var name: String
-    var icon: String
+    var colorHex: String
     var sortOrder: Int
 
-    var group: CategoryGroup?
+    @Relationship(deleteRule: .cascade, inverse: \Project.category)
+    var projects: [Project] = []
 
-    init(name: String, icon: String = "circle.fill", sortOrder: Int = 0, group: CategoryGroup? = nil) {
+    init(name: String, colorHex: String, sortOrder: Int = 0) {
         self.id = UUID()
         self.name = name
-        self.icon = icon
+        self.colorHex = colorHex
         self.sortOrder = sortOrder
-        self.group = group
     }
 }

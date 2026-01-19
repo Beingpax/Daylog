@@ -175,5 +175,5 @@ extension Int: @retroactive Identifiable {
 
 #Preview {
     TodayView()
-        .modelContainer(for: [CategoryGroup.self, Category.self, HourLog.self], inMemory: true)
+        .modelContainer(for: [Category.self, Project.self, HourLog.self], inMemory: true)
 }

@@ -25,14 +25,14 @@ struct HourBlockView: View {
     }
 
     private var blockColor: Color {
-        if let hex = log?.category?.group?.colorHex {
+        if let hex = log?.project?.category?.colorHex {
             return Color(hex: hex)
         }
         return Color(.systemGray5)
     }
 
     private var isLogged: Bool {
-        log?.category != nil
+        log?.project != nil
     }
 
     var body: some View {
@@ -73,12 +73,12 @@ struct HourBlockView: View {
                         .frame(height: 44)
 
                     // Content
-                    if let log = log, let category = log.category {
+                    if let log = log, let project = log.project {
                         HStack(spacing: 8) {
-                            Image(systemName: category.icon)
+                            Image(systemName: project.icon)
                                 .font(.subheadline)
 
-                            Text(category.name)
+                            Text(project.name)
                                 .font(.subheadline.weight(.medium))
                                 .lineLimit(1)
 
@@ -89,12 +89,6 @@ struct HourBlockView: View {
                                     .font(.caption2)
                                     .opacity(0.7)
                             }
-
-                            Text("\(log.productivityLevel)")
-                                .font(.caption.weight(.semibold).monospacedDigit())
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(.white.opacity(0.25), in: Capsule())
                         }
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)

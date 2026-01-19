@@ -9,7 +9,7 @@ import Charts
 
 struct MonthlyView: View {
     @Query private var allLogs: [HourLog]
-    @Query(sort: \CategoryGroup.sortOrder) private var categoryGroups: [CategoryGroup]
+    @Query(sort: \Category.sortOrder) private var categories: [Category]
 
     @State private var selectedMonth = Date().startOfMonth
 
@@ -27,12 +27,12 @@ struct MonthlyView: View {
 
     private var totalLoggedHours: Int { logsForMonth.count }
 
-    private var productiveHours: Int {
-        logsForMonth.filter { $0.category?.group?.name == "Productive" }.count
+    private var workHours: Int {
+        logsForMonth.filter { $0.project?.category?.name == "Work" }.count
     }
 
-    private var previousProductiveHours: Int {
-        previousMonthLogs.filter { $0.category?.group?.name == "Productive" }.count
+    private var previousWorkHours: Int {
+        previousMonthLogs.filter { $0.project?.category?.name == "Work" }.count
     }
 
     private var daysInMonth: [Date] {
@@ -98,51 +98,51 @@ struct MonthlyView: View {
 
     private func generateInsights() -> [MonthlyInsight] {
         var insights: [MonthlyInsight] = []
-        let hoursPerGroup = calculateHoursPerGroup()
+        let hoursPerCategory = calculateHoursPerCategory()
 
-        // Productive time change
-        if previousProductiveHours > 0 {
-            let change = productiveHours - previousProductiveHours
-            let pctChange = Int((Double(change) / Double(previousProductiveHours)) * 100)
+        // Work time change
+        if previousWorkHours > 0 {
+            let change = workHours - previousWorkHours
+            let pctChange = Int((Double(change) / Double(previousWorkHours)) * 100)
             if change >= 10 {
                 insights.append(MonthlyInsight(icon: "arrow.up.circle.fill", color: .green,
-                    text: "Productive time up \(change)h (+\(pctChange)%) from last month"))
+                    text: "Work time up \(change)h (+\(pctChange)%) from last month"))
             } else if change <= -10 {
                 insights.append(MonthlyInsight(icon: "arrow.down.circle.fill", color: .orange,
-                    text: "Productive time down \(abs(change))h from last month"))
+                    text: "Work time down \(abs(change))h from last month"))
             }
         }
 
-        // Best day for productivity
-        let productiveDayStats = calculateProductiveDayStats()
-        if let bestDay = productiveDayStats.max(by: { $0.avgHours < $1.avgHours }), bestDay.avgHours > 0 {
+        // Best day for work
+        let workDayStats = calculateWorkDayStats()
+        if let bestDay = workDayStats.max(by: { $0.avgHours < $1.avgHours }), bestDay.avgHours > 0 {
             insights.append(MonthlyInsight(icon: "star.fill", color: .yellow,
-                text: "\(bestDay.day)s are your most productive (avg \(String(format: "%.1f", bestDay.avgHours))h)"))
+                text: "\(bestDay.day)s have most work time (avg \(String(format: "%.1f", bestDay.avgHours))h)"))
         }
 
         // Category shift
-        for group in hoursPerGroup {
-            let prevHours = previousMonthLogs.filter { $0.category?.group?.id == group.group.id }.count
+        for category in hoursPerCategory {
+            let prevHours = previousMonthLogs.filter { $0.project?.category?.id == category.category.id }.count
             if prevHours > 0 {
-                let change = group.hours - prevHours
+                let change = category.hours - prevHours
                 let pctChange = Int((Double(change) / Double(prevHours)) * 100)
                 if change >= 15 {
-                    insights.append(MonthlyInsight(icon: "arrow.up.circle.fill", color: Color(hex: group.group.colorHex),
-                        text: "\(group.group.name) up \(change)h (+\(pctChange)%) from last month"))
+                    insights.append(MonthlyInsight(icon: "arrow.up.circle.fill", color: Color(hex: category.category.colorHex),
+                        text: "\(category.category.name) up \(change)h (+\(pctChange)%) from last month"))
                     break
                 } else if change <= -15 {
-                    insights.append(MonthlyInsight(icon: "arrow.down.circle.fill", color: Color(hex: group.group.colorHex),
-                        text: "\(group.group.name) down \(abs(change))h from last month"))
+                    insights.append(MonthlyInsight(icon: "arrow.down.circle.fill", color: Color(hex: category.category.colorHex),
+                        text: "\(category.category.name) down \(abs(change))h from last month"))
                     break
                 }
             }
         }
 
         // Time allocation
-        if let topGroup = hoursPerGroup.first {
-            let pct = percentage(topGroup.hours)
-            insights.append(MonthlyInsight(icon: "chart.pie.fill", color: Color(hex: topGroup.group.colorHex),
-                text: "\(pct)% of your month spent on \(topGroup.group.name)"))
+        if let topCategory = hoursPerCategory.first {
+            let pct = percentage(topCategory.hours)
+            insights.append(MonthlyInsight(icon: "chart.pie.fill", color: Color(hex: topCategory.category.colorHex),
+                text: "\(pct)% of your month spent on \(topCategory.category.name)"))
         }
 
         return Array(insights.prefix(4))
@@ -151,7 +151,7 @@ struct MonthlyView: View {
     // MARK: - Day of Week Analysis
 
     private var dayOfWeekAnalysis: some View {
-        AnalyticsCard(title: "Best Days", subtitle: bestDayOfWeek.map { "Most productive: \($0)" }) {
+        AnalyticsCard(title: "Best Days", subtitle: bestDayOfWeek.map { "Most active: \($0)" }) {
             HStack(spacing: 8) {
                 ForEach(calculateDayOfWeekStats(), id: \.day) { stat in
                     DayOfWeekBar(day: stat.day, percentage: stat.percentage, isHighest: stat.isHighest)
@@ -196,15 +196,15 @@ struct MonthlyView: View {
 
     private var categoryDistribution: some View {
         AnalyticsCard(title: "Time Distribution") {
-            let hoursPerGroup = calculateHoursPerGroup()
-            if hoursPerGroup.isEmpty {
+            let hoursPerCategory = calculateHoursPerCategory()
+            if hoursPerCategory.isEmpty {
                 Text("No data").foregroundStyle(.secondary)
             } else {
                 VStack(spacing: 14) {
-                    ForEach(hoursPerGroup, id: \.group.id) { item in
+                    ForEach(hoursPerCategory, id: \.category.id) { item in
                         CategoryDistributionRow(
-                            name: item.group.name,
-                            colorHex: item.group.colorHex,
+                            name: item.category.name,
+                            colorHex: item.category.colorHex,
                             hours: item.hours,
                             percentage: percentage(item.hours),
                             totalHours: totalLoggedHours
@@ -221,27 +221,27 @@ struct MonthlyView: View {
         logsForMonth.filter { $0.date.isSameDay(as: date) }
     }
 
-    private func calculateHoursPerGroup() -> [(group: CategoryGroup, hours: Int)] {
+    private func calculateHoursPerCategory() -> [(category: Category, hours: Int)] {
         var counts: [UUID: Int] = [:]
         for log in logsForMonth {
-            if let groupId = log.category?.group?.id { counts[groupId, default: 0] += 1 }
+            if let categoryId = log.project?.category?.id { counts[categoryId, default: 0] += 1 }
         }
-        return categoryGroups.compactMap { group in
-            if let hours = counts[group.id], hours > 0 { return (group: group, hours: hours) }
+        return categories.compactMap { category in
+            if let hours = counts[category.id], hours > 0 { return (category: category, hours: hours) }
             return nil
         }.sorted { $0.hours > $1.hours }
     }
 
-    private func calculateProductiveDayStats() -> [(day: String, avgHours: Double)] {
+    private func calculateWorkDayStats() -> [(day: String, avgHours: Double)] {
         let calendar = Calendar.current
         var dayTotals: [Int: (hours: Int, days: Int)] = [:]
         for dayIndex in 1...7 { dayTotals[dayIndex] = (0, 0) }
 
         for date in daysInMonth {
             let dayOfWeek = calendar.component(.weekday, from: date)
-            let productiveCount = logsForDay(date).filter { $0.category?.group?.name == "Productive" }.count
+            let workCount = logsForDay(date).filter { $0.project?.category?.name == "Work" }.count
             let current = dayTotals[dayOfWeek]!
-            dayTotals[dayOfWeek] = (current.hours + productiveCount, current.days + 1)
+            dayTotals[dayOfWeek] = (current.hours + workCount, current.days + 1)
         }
 
         let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -259,5 +259,5 @@ struct MonthlyView: View {
 
 #Preview {
     MonthlyView()
-        .modelContainer(for: [CategoryGroup.self, Category.self, HourLog.self], inMemory: true)
+        .modelContainer(for: [Category.self, Project.self, HourLog.self], inMemory: true)
 }

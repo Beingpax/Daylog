@@ -15,10 +15,9 @@ struct MultiHourEditSheet: View {
     let existingLogs: [HourLog]
     let onSave: () -> Void
 
-    @Query(sort: \CategoryGroup.sortOrder) private var categoryGroups: [CategoryGroup]
+    @Query(sort: \Category.sortOrder) private var categories: [Category]
 
-    @State private var selectedCategory: Category?
-    @State private var productivityLevel: Int = 5
+    @State private var selectedProject: Project?
     @State private var notes: String = ""
 
     private var hoursLabel: String {
@@ -42,8 +41,7 @@ struct MultiHourEditSheet: View {
         NavigationStack {
             List {
                 hoursSection
-                categorySection
-                productivitySection
+                projectSection
                 notesSection
             }
             .navigationTitle("\(hours.count) Hours")
@@ -55,7 +53,7 @@ struct MultiHourEditSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") { saveAll() }
                         .fontWeight(.semibold)
-                        .disabled(selectedCategory == nil)
+                        .disabled(selectedProject == nil)
                 }
             }
         }
@@ -78,50 +76,18 @@ struct MultiHourEditSheet: View {
         }
     }
 
-    private var categorySection: some View {
+    private var projectSection: some View {
         Section("Activity") {
-            Picker("Category", selection: $selectedCategory) {
-                Text("None").tag(nil as Category?)
-                ForEach(categoryGroups) { group in
-                    ForEach(group.categories.sorted { $0.sortOrder < $1.sortOrder }) { category in
-                        Text(category.name).tag(category as Category?)
+            Picker("Project", selection: $selectedProject) {
+                Text("None").tag(nil as Project?)
+                ForEach(categories) { category in
+                    ForEach(category.projects.sorted { $0.sortOrder < $1.sortOrder }) { project in
+                        Text(project.name).tag(project as Project?)
                     }
                 }
             }
             .pickerStyle(.wheel)
             .frame(height: 200)
-        }
-    }
-
-    private var productivitySection: some View {
-        Section {
-            VStack(spacing: 12) {
-                HStack {
-                    Text("Productivity")
-                    Spacer()
-                    Text("\(productivityLevel) — \(productivityLabel)")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color(hex: "#34C759"))
-                }
-
-                ProductivitySlider(value: $productivityLevel)
-            }
-        }
-    }
-
-    private var productivityLabel: String {
-        switch productivityLevel {
-        case 1: return "Idle"
-        case 2: return "Stalled"
-        case 3: return "Slow"
-        case 4: return "Sluggish"
-        case 5: return "Steady"
-        case 6: return "Active"
-        case 7: return "Focused"
-        case 8: return "Driven"
-        case 9: return "Flowing"
-        case 10: return "Peak"
-        default: return ""
         }
     }
 
@@ -133,7 +99,7 @@ struct MultiHourEditSheet: View {
     }
 
     private func saveAll() {
-        guard let category = selectedCategory else { return }
+        guard let project = selectedProject else { return }
 
         // Create a lookup for existing logs by hour
         var existingByHour: [Int: HourLog] = [:]
@@ -144,8 +110,7 @@ struct MultiHourEditSheet: View {
         for hour in hours {
             if let existing = existingByHour[hour] {
                 // Update existing log
-                existing.category = category
-                existing.productivityLevel = productivityLevel
+                existing.project = project
                 existing.notes = notes
                 existing.updatedAt = Date()
             } else {
@@ -153,9 +118,8 @@ struct MultiHourEditSheet: View {
                 let newLog = HourLog(
                     date: date,
                     hour: hour,
-                    category: category,
-                    notes: notes,
-                    productivityLevel: productivityLevel
+                    project: project,
+                    notes: notes
                 )
                 modelContext.insert(newLog)
             }
@@ -174,5 +138,5 @@ struct MultiHourEditSheet: View {
         existingLogs: [],
         onSave: {}
     )
-    .modelContainer(for: [CategoryGroup.self, Category.self, HourLog.self], inMemory: true)
+    .modelContainer(for: [Category.self, Project.self, HourLog.self], inMemory: true)
 }
